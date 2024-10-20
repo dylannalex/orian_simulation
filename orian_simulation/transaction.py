@@ -205,6 +205,7 @@ class TransactionQuantityManagerByWalletPercentage(TransactionQuantityManager):
         Returns:
         - TransactionDTO: The transaction DTO with updated asset amount.
         """
+        # Compute asset amount based on transaction type
         if transaction_dto.transaction_type == TransactionEnum.BUY:
             currency_amount = self.wallet.amounts[self.wallet.base_currency]
             currency_amount *= self.percentage
@@ -216,6 +217,10 @@ class TransactionQuantityManagerByWalletPercentage(TransactionQuantityManager):
 
         else:
             asset_amount = 0
+
+        # Convert to integer if asset does not allow float amounts
+        if not transaction_dto.asset.allow_float_amount:
+            asset_amount = int(asset_amount)
 
         transaction_dto.asset_amount = asset_amount
         return transaction_dto
@@ -236,11 +241,10 @@ class TransactionQuantityManagerByFixedAmount(TransactionQuantityManager):
     """
 
     def __init__(
-        self, wallet: Wallet, currency_amount_to_buy: float, asset_amount_to_sell: float
+        self, wallet: Wallet, fixed_amount: float
     ):
         self.wallet = wallet
-        self.currency_amount_to_buy = currency_amount_to_buy
-        self.asset_amount_to_sell = asset_amount_to_sell
+        self.fixed_amount = fixed_amount
 
     def compute_asset_amount(self, transaction_dto: TransactionDTO) -> TransactionDTO:
         """
@@ -252,14 +256,21 @@ class TransactionQuantityManagerByFixedAmount(TransactionQuantityManager):
         Returns:
         - TransactionDTO: The transaction DTO with updated asset amount.
         """
+        # Convert to integer if asset does not allow float amounts
+        if not transaction_dto.asset.allow_float_amount:
+            fixed_amount = int(self.fixed_amount)
+        else:
+            fixed_amount = self.fixed_amount
+
+        # Compute asset amount based on transaction type
         if transaction_dto.transaction_type == TransactionEnum.BUY:
             wallet_currency_amount = self.wallet.amounts[self.wallet.base_currency]
-            currency_amount = min(wallet_currency_amount, self.currency_amount_to_buy)
+            currency_amount = min(wallet_currency_amount, fixed_amount)
             asset_amount = currency_amount / transaction_dto.asset_price
 
         elif transaction_dto.transaction_type == TransactionEnum.SELL:
             wallet_asset_amount = self.wallet.amounts[transaction_dto.asset]
-            asset_amount = min(wallet_asset_amount, self.asset_amount_to_sell)
+            asset_amount = min(wallet_asset_amount, fixed_amount)
 
         else:
             asset_amount = 0
