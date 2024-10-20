@@ -14,39 +14,53 @@ class TradingAlgorithm(ABC):
         pass
 
 
-class TrendAlgorithm(TradingAlgorithm):
+class SteadyTrendAlgorithm(TradingAlgorithm):
     """
-    A trading algorithm that predicts the trend of a stock based on the recent closing prices.
+    A trading algorithm that predicts a steady trend in stock prices based on recent closing prices.
 
-    The algorithm analyzes the closing prices over a specified window size. It predicts:
-    - INCREASE: if all prices within the window have increased consecutively.
-    - DECREASE: if all prices within the window have decreased consecutively.
-    - STABLE: if the prices within the window do not show a consistent increase or decrease.
-    - UNKNOWN: if there are not enough prices to fill the window size.
+    This algorithm analyzes the closing prices within a specified window size and predicts the overall trend based on the consistency of consecutive price movements. It predicts:
+    
+    - INCREASE: If all prices within the window increase consecutively.
+    - DECREASE: If all prices within the window decrease consecutively.
+    - STABLE: If the prices within the window fluctuate without showing a consistent increase or decrease.
+    - UNKNOWN: If there are not enough data points to fill the specified window size.
+
+    The algorithm is ideal for identifying consistent price trends over short periods, focusing on detecting continuous, unbroken upward or downward movements in stock prices.
 
     Args:
-        window_size (int): The number of recent closing prices to consider for prediction.
+        window_size (int): The number of recent closing prices to analyze for trend prediction.
+
+    Attributes:
+        window_size (int): Defines the number of closing prices used to evaluate the trend.
+        name (str): A name for the algorithm, indicating the window size being used.
+    
     Methods:
         make_prediction(stock_market_data: pd.DataFrame) -> PredictionEnum:
-            Makes a prediction on the trend of a stock based on the given stock market data.
+            Analyzes the recent stock market data and predicts the trend based on the closing prices within the window.
     """
-
+    
     def __init__(self, window_size: int):
         self.window_size = window_size
-        self.name = f"TrendAlgorithm({window_size})"
+        self.name = f"SteadyTrendAlgorithm({window_size})"
 
     def make_prediction(self, stock_market_data: pd.DataFrame) -> PredictionEnum:
         """
-        Makes a prediction on the trend of a stock based on the given stock market data.
+        Analyzes the stock market data and predicts the trend based on consecutive price movements.
+
         Args:
-            stock_market_data (pd.DataFrame): The stock market data containing the closing prices.
+            stock_market_data (pd.DataFrame): The stock market data containing the 'Close' column with closing prices.
+        
         Returns:
-            PredictionEnum: The predicted trend of the stock (INCREASE, DECREASE, or STABLE).
+            PredictionEnum: The predicted trend of the stock, which can be one of the following:
+                - INCREASE: If all prices have increased consecutively within the window.
+                - DECREASE: If all prices have decreased consecutively within the window.
+                - STABLE: If the prices do not show a consistent trend.
+                - UNKNOWN: If there are insufficient data points to fill the window size.
         """
         if len(stock_market_data) < self.window_size:
             return PredictionEnum.UNKNOWN
 
-        prices = stock_market_data["Close"].iloc[-self.window_size :]
+        prices = stock_market_data["Close"].iloc[-self.window_size:]
 
         if all(prices.iloc[i] < prices.iloc[i + 1] for i in range(self.window_size - 1)):
             return PredictionEnum.INCREASE
@@ -54,14 +68,14 @@ class TrendAlgorithm(TradingAlgorithm):
             return PredictionEnum.DECREASE
         else:
             return PredictionEnum.STABLE
-        
+
 class MajorityTrendAlgorithm(TradingAlgorithm):
     """
     A trading algorithm that predicts the dominant trend in stock prices based on recent closing prices.
 
     The algorithm analyzes closing prices over a specified window size and determines the majority trend (whether prices
     are increasing, decreasing, or stable) during that period. It predicts:
-    
+
     - INCREASE: if the majority of consecutive price movements within the window show an increase.
     - DECREASE: if the majority of consecutive price movements within the window show a decrease.
     - STABLE: if there is no clear majority of increasing or decreasing movements.
