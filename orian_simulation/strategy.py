@@ -99,4 +99,6 @@ class AutomatedStrategy:
                 )
             )
 
-        return transaction_dto
+        # Ensure non-zero asset amount for transaction
+        if transaction_dto.asset_amount > 0:
+            return transaction_dto
