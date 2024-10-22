@@ -23,7 +23,7 @@ class WalletUpdate:
     time: Timestamp
     wallet_amounts: dict[Union[Asset, Currency], float]
     transaction_dto: TransactionDTO
-    net_value: float
+    balance: float
 
 
 class OnlineSimulation:
@@ -87,25 +87,25 @@ class OnlineSimulation:
                         time=current_date,
                         wallet_amounts=self.wallet.amounts.copy(),
                         transaction_dto=transaction,
-                        net_value=self._get_wallet_net_value(date=current_date),
+                        balance=self._get_wallet_balance(date=current_date),
                     )
                 )
 
-    def _get_wallet_net_value(self, date) -> float:
+    def _get_wallet_balance(self, date) -> float:
         """
         Returns the net value of the wallet based on the asset prices in the stock market data.
         """
-        net_value = 0.0
+        balance = 0.0
         for asset, amount in self.wallet.amounts.items():
             if isinstance(asset, Currency):
                 continue
 
             asset_price = self.stock_market_handler.get_asset_price(asset, date)
             if asset_price is not None:
-                net_value += asset_price * amount
+                balance += asset_price * amount
 
-        net_value += self.wallet.amounts[self.wallet.base_currency]
-        return net_value
+        balance += self.wallet.amounts[self.wallet.base_currency]
+        return balance
 
     @property
     def simulation_history_dataframe(self) -> pd.DataFrame:
@@ -118,7 +118,7 @@ class OnlineSimulation:
                     "strategy": update.transaction_dto.strategy_name,
                     "amount": update.transaction_dto.asset_amount,
                     "transaction_type": update.transaction_dto.transaction_type,
-                    "total_net_value": update.net_value,
+                    "total_balance": update.balance,
                     **update.wallet_amounts,
                 }
                 for update in self.history
